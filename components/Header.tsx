@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Menu, X, Search, Heart, ShoppingCart } from 'lucide-react';
+import { Menu, X, Search, Heart, ShoppingCart, Download } from 'lucide-react';
+import CatalogPDF from './CatalogPDF';
 import { useCartFavorites } from '@/contexts/CartFavoritesContext';
+import { useData } from '@/contexts/DataContext';
 
 // Datos fallback
 const fallbackProducts = [
@@ -20,6 +22,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const { cartCount, favoritesCount } = useCartFavorites();
+  const { products } = useData(); // Use products from DataContext instead of fetching separately
   const pathname = usePathname();
   
   const isActivePath = (path: string) => {
@@ -31,19 +34,22 @@ export default function Header() {
   // Buscador
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [products, setProducts] = useState(fallbackProducts);
   const [filteredProducts, setFilteredProducts] = useState(fallbackProducts.slice(0, 5));
   
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const topSlides = [
-    'Envíos a todo el país',
-    'Productos 100% naturales de Catamarca',
-    'Atención personalizada por WhatsApp',
-    'Transferencia Bancaria - 10% de descuento',
-    'Compra Mayorista - Precios especiales',
-  ];
+  // Get carousel texts from .env or use defaults
+  const carouselTextsEnv = process.env.NEXT_PUBLIC_HEADER_CAROUSEL_TEXTS;
+  const topSlides = carouselTextsEnv 
+    ? carouselTextsEnv.split(',').map(text => text.trim()).filter(text => text).slice(0, 5)
+    : [
+        'Envíos a todo el país',
+        'Productos 100% naturales de Catamarca',
+        'Atención personalizada por WhatsApp',
+        'Transferencia Bancaria - 10% de descuento',
+        'Compra Mayorista - Precios especiales',
+      ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,23 +57,6 @@ export default function Header() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-  
-  // Cargar productos
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch('/api/products');
-        const result = await response.json();
-        if (result.success && result.data.products.length > 0) {
-          setProducts(result.data.products);
-        }
-      } catch (error) {
-        console.error('Error loading products:', error);
-      }
-    };
-    
-    fetchProducts();
   }, []);
   
   // Función para normalizar texto (quitar tildes y convertir a minúsculas)
@@ -416,16 +405,6 @@ export default function Header() {
                 Mayoristas
               </Link>
               <Link 
-                href="/nosotros" 
-                className={`font-poppins font-semibold pb-1 transition-colors ${
-                  isActivePath('/nosotros') 
-                    ? 'text-[#D90429] border-b-2 border-[#D90429]' 
-                    : 'text-gray-700 hover:text-[#D90429]'
-                }`}
-              >
-                Nosotros
-              </Link>
-              <Link 
                 href="/contacto" 
                 className={`font-poppins font-semibold pb-1 transition-colors ${
                   isActivePath('/contacto') 
@@ -435,6 +414,9 @@ export default function Header() {
               >
                 Contacto
               </Link>
+              <div className="ml-auto">
+                <CatalogPDF />
+              </div>
             </nav>
           </div>
         </div>
@@ -511,15 +493,6 @@ export default function Header() {
                   Mayoristas
                 </Link>
                 <Link 
-                  href="/nosotros" 
-                  className={`block font-poppins font-semibold py-2 transition-colors ${
-                    isActivePath('/nosotros') ? 'text-[#D90429]' : 'text-gray-700 hover:text-[#D90429]'
-                  }`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Nosotros
-                </Link>
-                <Link 
                   href="/contacto" 
                   className={`block font-poppins font-semibold py-2 transition-colors ${
                     isActivePath('/contacto') ? 'text-[#D90429]' : 'text-gray-700 hover:text-[#D90429]'
@@ -533,6 +506,9 @@ export default function Header() {
               {/* Botones - Móvil */}
               <div className="mt-8 pt-4 border-t border-gray-200">
                 <div className="flex flex-col gap-3">
+                  <div>
+                    <CatalogPDF onDownload={() => setIsMobileMenuOpen(false)} />
+                  </div>
                   <button className="flex items-center justify-between w-full py-3 text-gray-700 hover:text-[#D90429] transition-colors">
                     <span className="font-poppins font-medium">Ingresar</span>
                   </button>
@@ -578,12 +554,12 @@ export default function Header() {
         }
         .animate-infinite-scroll {
           display: flex;
-          width: 200%; /* 3 sets of slides */
+          width: 800%; /* 3 sets of slides */
           animation: infiniteScroll 120s linear infinite;
         }
         @media (max-width: 768px) {
           .animate-infinite-scroll {
-            animation-duration: 100s;
+            animation-duration: 20s;
           }
         }
       `}</style>

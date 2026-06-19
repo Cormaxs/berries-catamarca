@@ -3,6 +3,7 @@ import { Poppins, Montserrat, Inter } from "next/font/google";
 import "./globals.css";
 import { CartFavoritesProvider } from "@/contexts/CartFavoritesContext";
 import { DataProvider } from "@/contexts/DataContext";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const poppins = Poppins({
   weight: ['400', '500', '600', '700', '800', '900'],
@@ -74,8 +75,8 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/logo.png",
+    icon: "/logo.jpeg",
+    apple: "/logo.jpeg",
   },
 };
 
@@ -90,6 +91,7 @@ export default function RootLayout({
         <DataProvider>
           <CartFavoritesProvider>
             {children}
+            <WhatsAppButton />
           </CartFavoritesProvider>
         </DataProvider>
       </body>

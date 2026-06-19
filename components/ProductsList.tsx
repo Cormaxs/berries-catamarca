@@ -4,36 +4,14 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ShoppingCart, Heart } from 'lucide-react';
+import { ShoppingCart, Heart, Filter, X } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Pagination from '@/components/Pagination';
 import { useCartFavorites } from '@/contexts/CartFavoritesContext';
 import { useData } from '@/contexts/DataContext';
 import { ProductGridSkeleton } from '@/components/SkeletonLoader';
-
-// Función para calcular precio con descuento
-const calculateDiscountPrice = (price: string, discount: string) => {
-  const priceNumber = parseInt(price.replace(/[^0-9]/g, ''))
-  const discountNumber = parseInt(discount)
-  
-  if (isNaN(priceNumber) || isNaN(discountNumber) || discountNumber <= 0) {
-    return { originalPrice: price, discountedPrice: null, discountText: null }
-  }
-  
-  const discountAmount = Math.floor(priceNumber * (discountNumber / 100))
-  const finalPrice = priceNumber - discountAmount
-  
-  const formatPrice = (num: number) => {
-    return '$' + num.toLocaleString('es-AR')
-  }
-  
-  return {
-    originalPrice: formatPrice(priceNumber),
-    discountedPrice: formatPrice(finalPrice),
-    discountText: `${discountNumber}% OFF`
-  }
-}
+import { calculateDiscountPrice } from '@/lib/utils';
 
 const PRODUCTS_PER_PAGE = 8;
 
@@ -50,6 +28,7 @@ export default function ProductsList() {
   // Filtros
   const [selectedCategory, setSelectedCategory] = useState<string>('todas');
   const [sortBy, setSortBy] = useState('mas-vendidos');
+  const [showFilters, setShowFilters] = useState(false);
   
   // Obtener categorías únicas
   const categories = ['todas', ...new Set(products.map(p => p.categorias))];
@@ -149,10 +128,21 @@ export default function ProductsList() {
         </div>
       </div>
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="container mx-auto px-2 sm:px-4 py-6 sm:py-8">
+        {/* Botón de filtros para móviles */}
+        <div className="lg:hidden mb-4 sm:mb-6">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full flex items-center justify-center gap-2 bg-white px-4 py-3 rounded-xl border border-gray-200 shadow-sm font-poppins font-medium text-gray-800"
+          >
+            <Filter size={18} />
+            {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+          </button>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Filtros - Sidebar (todas las páginas) */}
-          <aside className="w-full lg:w-64 flex-shrink-0">
+          <aside className={`w-full lg:w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
             <div className="bg-white rounded-xl p-6 shadow-sm sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-poppins font-semibold text-gray-800">Filtros</h3>
@@ -197,9 +187,9 @@ export default function ProductsList() {
           {/* Resultados */}
           <div className="flex-1">
             {/* Header de resultados */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-4">
               <div>
-                <h1 className="font-poppins font-bold text-2xl text-gray-800">
+                <h1 className="font-poppins font-bold text-xl sm:text-2xl text-gray-800">
                   {pageType === 'busqueda' ? (
                     <>Resultados para: <span className="text-[#D90429]">&quot;{query}&quot;</span></>
                   ) : (
@@ -214,19 +204,22 @@ export default function ProductsList() {
                 </p>
               </div>
               
-              {/* Ordenar */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Ordenar por:</span>
-                <select 
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D90429] focus:border-transparent"
-                >
-                  <option value="mas-vendidos">Más vendidos</option>
-                  <option value="precio-asc">Precio: Menor a mayor</option>
-                  <option value="precio-desc">Precio: Mayor a menor</option>
-                  <option value="nombre">Nombre: A - Z</option>
-                </select>
+              {/* Botones */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Ordenar */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Ordenar por:</span>
+                  <select 
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D90429] focus:border-transparent"
+                  >
+                    <option value="mas-vendidos">Más vendidos</option>
+                    <option value="precio-asc">Precio: Menor a mayor</option>
+                    <option value="precio-desc">Precio: Mayor a menor</option>
+                    <option value="nombre">Nombre: A - Z</option>
+                  </select>
+                </div>
               </div>
             </div>
             
@@ -254,76 +247,91 @@ export default function ProductsList() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
                   {currentProducts.map((producto) => {
                     const discountData = calculateDiscountPrice(producto.precio, producto.oferta || '')
+                    const isOutOfStock = producto.stock === 0 || (typeof producto.stock === 'string' && parseInt(producto.stock) === 0)
                     
                     return (
                       <div 
                         key={producto.id} 
-                        className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all group"
+                        className={`bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all group ${isOutOfStock ? 'opacity-60 pointer-events-none' : ''}`}
                       >
-                        <Link href={`/producto/${producto.id}`}>
-                          <div className="bg-gray-100 h-56 relative">
+                        <Link href={isOutOfStock ? '#' : `/producto/${producto.id}`}>
+                          <div className="bg-gray-100 h-36 sm:h-56 relative">
                             <Image 
                               src={producto.imagen} 
                               alt={producto.nombre} 
                               fill 
                               loading="lazy"
-                              className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                              className="object-contain p-2 sm:p-4 group-hover:scale-105 transition-transform duration-300"
                             />
-                            {discountData.discountText && (
-                              <div className="absolute top-2 left-2 bg-[#D90429] text-white text-xs font-bold px-2 py-1 rounded">
+                            {discountData.discountText && !isOutOfStock && (
+                              <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-[#D90429] text-white text-xs font-bold px-2 py-1 rounded">
                                 {discountData.discountText}
+                              </div>
+                            )}
+                            {isOutOfStock && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                                <div className="bg-white px-4 py-2 rounded-full shadow-lg">
+                                  <span className="font-poppins font-bold text-[#D90429] text-sm sm:text-base">AGOTADO</span>
+                                </div>
                               </div>
                             )}
                           </div>
                         </Link>
-                        <div className="p-4">
-                          <Link href={`/producto/${producto.id}`}>
-                            <h3 className="font-poppins font-semibold text-sm">{producto.nombre}</h3>
-                            <p className="font-inter text-xs text-gray-500 mb-2">{producto.peso}</p>
+                        <div className="p-2 sm:p-4">
+                          <Link href={isOutOfStock ? '#' : `/producto/${producto.id}`}>
+                            <h3 className="font-poppins font-semibold text-xs sm:text-sm">{producto.nombre}</h3>
+                            <p className="font-inter text-xs text-gray-500 mb-1 sm:mb-2">{producto.peso}</p>
                             {producto.descripcion && (
-                              <p className="font-inter text-xs text-gray-400 mb-3 line-clamp-2">{producto.descripcion}</p>
+                              <p className="font-inter text-[10px] sm:text-xs text-gray-400 mb-2 sm:mb-3 line-clamp-1 sm:line-clamp-2">{producto.descripcion}</p>
                             )}
-                            <div className="mb-3">
+                            <div className="mb-2 sm:mb-3">
                               {discountData.discountedPrice ? (
-                                <div className="flex items-center gap-2">
-                                  <p className="font-poppins font-bold text-[#D90429]">{discountData.discountedPrice}</p>
-                                  <p className="font-poppins text-xs text-gray-400 line-through">{discountData.originalPrice}</p>
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                  <p className="font-poppins font-bold text-[#D90429] text-sm sm:text-base">{discountData.discountedPrice}</p>
+                                  <p className="font-poppins text-[10px] sm:text-xs text-gray-400 line-through">{discountData.originalPrice}</p>
                                 </div>
                               ) : (
-                                <p className="font-poppins font-bold text-[#D90429]">{producto.precio}</p>
+                                <p className="font-poppins font-bold text-[#D90429] text-sm sm:text-base">{producto.precio}</p>
                               )}
                             </div>
                           </Link>
-                          <div className="flex items-center justify-between gap-2">
-                            <button 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                toggleFavorite(producto);
-                              }}
-                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                                isFavorite(producto.id) 
-                                  ? 'bg-[#D90429] text-white' 
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                              }`}
-                            >
-                              <Heart size={18} fill={isFavorite(producto.id) ? 'currentColor' : 'none'} />
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                addToCart(producto);
-                              }}
-                              className="flex-1 bg-[#D90429] text-white py-2 px-3 rounded-lg font-poppins font-medium text-sm hover:bg-[#8D0801] transition-colors flex items-center justify-center gap-2"
-                            >
-                              <ShoppingCart size={16} />
-                              <span>Agregar</span>
-                            </button>
-                          </div>
+                          {!isOutOfStock && (
+                            <div className="flex items-center justify-between gap-1 sm:gap-2">
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  toggleFavorite(producto);
+                                }}
+                                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${
+                                  isFavorite(producto.id) 
+                                    ? 'bg-[#D90429] text-white' 
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                              >
+                                <Heart size={16} sm={18} fill={isFavorite(producto.id) ? 'currentColor' : 'none'} />
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  addToCart(producto);
+                                }}
+                                className="flex-1 bg-[#D90429] text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg font-poppins font-medium text-[10px] sm:text-sm hover:bg-[#8D0801] transition-colors flex items-center justify-center gap-1 sm:gap-2"
+                              >
+                                <ShoppingCart size={14} sm={16} />
+                                <span>Agregar</span>
+                              </button>
+                            </div>
+                          )}
+                          {isOutOfStock && (
+                            <div className="text-center">
+                              <span className="font-poppins font-semibold text-[#D90429] text-xs sm:text-sm">AGOTADO</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )

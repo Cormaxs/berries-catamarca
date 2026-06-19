@@ -115,9 +115,16 @@ export default function ProductDetailClient({ id }: ProductDetailClientProps) {
                 className="object-contain p-8"
                 priority
               />
-              {discountData.discountText && (
+              {discountData.discountText && inStock && (
                 <div className="absolute top-4 left-4 bg-[#D90429] text-white text-sm font-bold px-4 py-2 rounded-lg">
                   {discountData.discountText}
+                </div>
+              )}
+              {!inStock && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                  <div className="bg-white px-6 py-3 rounded-full shadow-lg">
+                    <span className="font-poppins font-bold text-[#D90429] text-xl">AGOTADO</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -299,13 +306,14 @@ export default function ProductDetailClient({ id }: ProductDetailClientProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => {
               const relatedDiscountData = calculateDiscountPrice(relatedProduct.precio, relatedProduct.oferta || '');
+              const isOutOfStock = relatedProduct.stock === 0 || (typeof relatedProduct.stock === 'string' && parseInt(relatedProduct.stock) === 0);
               
               return (
                 <div 
                   key={relatedProduct.id}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all group"
+                  className={`bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all group ${isOutOfStock ? 'opacity-60 pointer-events-none' : ''}`}
                 >
-                  <Link href={`/producto/${relatedProduct.id}`}>
+                  <Link href={isOutOfStock ? '#' : `/producto/${relatedProduct.id}`}>
                     <div className="bg-gray-100 h-56 relative">
                       <Image 
                         src={relatedProduct.imagen}
@@ -314,15 +322,22 @@ export default function ProductDetailClient({ id }: ProductDetailClientProps) {
                         loading="lazy"
                         className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
                       />
-                      {relatedDiscountData.discountText && (
+                      {relatedDiscountData.discountText && !isOutOfStock && (
                         <div className="absolute top-2 left-2 bg-[#D90429] text-white text-xs font-bold px-2 py-1 rounded">
                           {relatedDiscountData.discountText}
+                        </div>
+                      )}
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                          <div className="bg-white px-4 py-2 rounded-full shadow-lg">
+                            <span className="font-poppins font-bold text-[#D90429]">AGOTADO</span>
+                          </div>
                         </div>
                       )}
                     </div>
                   </Link>
                   <div className="p-4">
-                    <Link href={`/producto/${relatedProduct.id}`}>
+                    <Link href={isOutOfStock ? '#' : `/producto/${relatedProduct.id}`}>
                       <h3 className="font-poppins font-semibold text-sm text-gray-800 mb-1">
                         {relatedProduct.nombre}
                       </h3>
@@ -346,33 +361,40 @@ export default function ProductDetailClient({ id }: ProductDetailClientProps) {
                         )}
                       </div>
                     </Link>
-                    <div className="flex items-center justify-between gap-2">
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleFavorite(relatedProduct);
-                        }}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                          isFavorite(relatedProduct.id) 
-                            ? 'bg-[#D90429] text-white' 
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        <Heart size={18} fill={isFavorite(relatedProduct.id) ? 'currentColor' : 'none'} />
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          addToCart(relatedProduct);
-                        }}
-                        className="flex-1 bg-[#D90429] text-white py-2 px-3 rounded-lg font-poppins font-medium text-sm hover:bg-[#8D0801] transition-colors flex items-center justify-center gap-2"
-                      >
-                        <ShoppingCart size={16} />
-                        <span>Agregar</span>
-                      </button>
-                    </div>
+                    {!isOutOfStock && (
+                      <div className="flex items-center justify-between gap-2">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleFavorite(relatedProduct);
+                          }}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                            isFavorite(relatedProduct.id) 
+                              ? 'bg-[#D90429] text-white' 
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          <Heart size={18} fill={isFavorite(relatedProduct.id) ? 'currentColor' : 'none'} />
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            addToCart(relatedProduct);
+                          }}
+                          className="flex-1 bg-[#D90429] text-white py-2 px-3 rounded-lg font-poppins font-medium text-sm hover:bg-[#8D0801] transition-colors flex items-center justify-center gap-2"
+                        >
+                          <ShoppingCart size={16} />
+                          <span>Agregar</span>
+                        </button>
+                      </div>
+                    )}
+                    {isOutOfStock && (
+                      <div className="text-center">
+                        <span className="font-poppins font-semibold text-[#D90429]">AGOTADO</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

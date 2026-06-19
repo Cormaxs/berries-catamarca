@@ -243,13 +243,14 @@ export default function HomeClient() {
                     imagen: producto.imagen,
                   };
                   const discountData = calculateDiscountPrice(producto.precio, producto.oferta || '')
+                  const isOutOfStock = producto.stock === 0 || (typeof producto.stock === 'string' && parseInt(producto.stock) === 0)
                   
                   return (
                     <div 
                       key={producto.id || index} 
-                    className="flex-shrink-0 w-72 bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all group"
+                    className={`flex-shrink-0 w-72 bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all group ${isOutOfStock ? 'opacity-60 pointer-events-none' : ''}`}
                     >
-                      <Link href={`/producto/${producto.id}`}>
+                      <Link href={isOutOfStock ? '#' : `/producto/${producto.id}`}>
                         <div className="bg-gray-100 h-56 relative">
                           <Image 
                             src={producto.imagen} 
@@ -258,15 +259,22 @@ export default function HomeClient() {
                             loading="lazy"
                             className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
                           />
-                          {discountData.discountText && (
+                          {discountData.discountText && !isOutOfStock && (
                             <div className="absolute top-2 left-2 bg-[#D90429] text-white text-xs font-bold px-2 py-1 rounded">
                               {discountData.discountText}
+                            </div>
+                          )}
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                              <div className="bg-white px-4 py-2 rounded-full shadow-lg">
+                                <span className="font-poppins font-bold text-[#D90429]">AGOTADO</span>
+                              </div>
                             </div>
                           )}
                         </div>
                       </Link>
                       <div className="p-4">
-                        <Link href={`/producto/${producto.id}`}>
+                        <Link href={isOutOfStock ? '#' : `/producto/${producto.id}`}>
                           <h3 className="font-poppins font-semibold text-sm">{producto.nombre}</h3>
                           <p className="font-inter text-xs text-gray-500 mb-2">{producto.peso}</p>
                           <div className="mb-3">
@@ -280,33 +288,40 @@ export default function HomeClient() {
                             )}
                           </div>
                         </Link>
-                        <div className="flex items-center justify-between gap-2">
-                          <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleFavorite(productForContext);
-                            }}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                              isFavorite(producto.id) 
-                                ? 'bg-[#D90429] text-white' 
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                          >
-                            <Heart size={18} fill={isFavorite(producto.id) ? 'currentColor' : 'none'} />
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              addToCart(productForContext);
-                            }}
-                            className="flex-1 bg-[#D90429] text-white py-2 px-3 rounded-lg font-poppins font-medium text-sm hover:bg-[#8D0801] transition-colors flex items-center justify-center gap-2"
-                          >
-                            <ShoppingCart size={16} />
-                            <span>Agregar</span>
-                          </button>
-                        </div>
+                        {!isOutOfStock && (
+                          <div className="flex items-center justify-between gap-2">
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleFavorite(productForContext);
+                              }}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                                isFavorite(producto.id) 
+                                  ? 'bg-[#D90429] text-white' 
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
+                            >
+                              <Heart size={18} fill={isFavorite(producto.id) ? 'currentColor' : 'none'} />
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                addToCart(productForContext);
+                              }}
+                              className="flex-1 bg-[#D90429] text-white py-2 px-3 rounded-lg font-poppins font-medium text-sm hover:bg-[#8D0801] transition-colors flex items-center justify-center gap-2"
+                            >
+                              <ShoppingCart size={16} />
+                              <span>Agregar</span>
+                            </button>
+                          </div>
+                        )}
+                        {isOutOfStock && (
+                          <div className="text-center">
+                            <span className="font-poppins font-semibold text-[#D90429]">AGOTADO</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )

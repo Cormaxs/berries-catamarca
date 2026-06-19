@@ -7,28 +7,7 @@ import { useCartFavorites } from '@/contexts/CartFavoritesContext';
 import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-
-const calculateDiscountPrice = (price: string, discount: string) => {
-  const priceNumber = parseInt(price.replace(/[^0-9]/g, ''));
-  const discountNumber = parseInt(discount);
-  
-  if (isNaN(priceNumber) || isNaN(discountNumber) || discountNumber <= 0) {
-    return { originalPrice: price, discountedPrice: null, discountText: null };
-  }
-  
-  const discountAmount = Math.floor(priceNumber * (discountNumber / 100));
-  const finalPrice = priceNumber - discountAmount;
-  
-  const formatPrice = (num: number) => {
-    return '$' + num.toLocaleString('es-AR');
-  };
-  
-  return {
-    originalPrice: formatPrice(priceNumber),
-    discountedPrice: formatPrice(finalPrice),
-    discountText: `${discountNumber}% OFF`
-  };
-};
+import { calculateDiscountPrice, formatPrice, getAbsoluteUrl } from '@/lib/utils';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateCartQuantity } = useCartFavorites();
@@ -46,16 +25,13 @@ export default function CartPage() {
     setTotal(newTotal);
   }, [cart]);
 
-  const formatPrice = (num: number) => {
-    return '$' + num.toLocaleString('es-AR');
-  };
-
   const generateWhatsAppMessage = () => {
+    const websiteDomain = process.env.NEXT_PUBLIC_WEBSITE_DOMAIN || 'http://localhost:3000';
     let message = 'Hola! Quiero hacer el siguiente pedido:%0A%0A';
     cart.forEach(item => {
       const discountData = calculateDiscountPrice(item.precio, item.oferta || '');
       const price = discountData.discountedPrice || item.precio;
-      const productUrl = `http://localhost:3001/producto/${item.id}`;
+      const productUrl = `${websiteDomain}/producto/${item.id}`;
       message += `* ${item.nombre} (${item.peso}) x${item.quantity} = ${price}%0A`;
       message += `Link: ${productUrl}%0A`;
     });
@@ -187,7 +163,7 @@ export default function CartPage() {
                     </span>
                   </div>
                   <a 
-                    href={`https://wa.me/5493834901162?text=${generateWhatsAppMessage()}`}
+                    href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${generateWhatsAppMessage()}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block w-full bg-[#D90429] text-white text-center px-6 py-4 rounded-lg font-poppins font-semibold hover:bg-[#8D0801] transition-colors"
