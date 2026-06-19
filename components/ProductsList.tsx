@@ -312,7 +312,7 @@ export default function ProductsList() {
                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                               >
-                                <Heart size={16} sm={18} fill={isFavorite(producto.id) ? 'currentColor' : 'none'} />
+                                <Heart size={16} fill={isFavorite(producto.id) ? 'currentColor' : 'none'} />
                               </button>
                               <button 
                                 onClick={(e) => {
@@ -322,7 +322,7 @@ export default function ProductsList() {
                                 }}
                                 className="flex-1 bg-[#D90429] text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg font-poppins font-medium text-[10px] sm:text-sm hover:bg-[#8D0801] transition-colors flex items-center justify-center gap-1 sm:gap-2"
                               >
-                                <ShoppingCart size={14} sm={16} />
+                                <ShoppingCart size={14} />
                                 <span>Agregar</span>
                               </button>
                             </div>

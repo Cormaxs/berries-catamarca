@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Menu, X, Search, Heart, ShoppingCart, Download } from 'lucide-react';
 import CatalogPDF from './CatalogPDF';
 import { useCartFavorites } from '@/contexts/CartFavoritesContext';
-import { useData } from '@/contexts/DataContext';
+import { useData, Product } from '@/contexts/DataContext';
 
 // Datos fallback
 const fallbackProducts = [
@@ -34,7 +34,7 @@ export default function Header() {
   // Buscador
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [filteredProducts, setFilteredProducts] = useState(fallbackProducts.slice(0, 5));
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(fallbackProducts.slice(0, 5));
   
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();

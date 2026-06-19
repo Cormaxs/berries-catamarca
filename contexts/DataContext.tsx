@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface Product {
+export interface Product {
   id: number | string;
   nombre: string;
   peso: string;
